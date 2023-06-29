@@ -1,9 +1,17 @@
+import 'dart:convert';
+
 import 'package:cassoa_traveller/views/auth/signup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rive/rive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
+import '../../config/base.dart';
+import '../../config/constants.dart';
+import '../../models/user_login_model.dart';
+import '../home/homepage.dart';
 import '../reusablewidgets/tille.dart';
+import 'package:http/http.dart' as http;
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -12,7 +20,7 @@ class SignInPage extends StatefulWidget {
   State<SignInPage> createState() => _SignInPageState();
 }
 
-class _SignInPageState extends State<SignInPage> {
+class _SignInPageState extends Base<SignInPage> {
   var passportNumberController = TextEditingController();
   var passwordController = TextEditingController();
   late String animationURL;
@@ -20,8 +28,77 @@ class _SignInPageState extends State<SignInPage> {
   SMITrigger? successTrigger, failTrigger;
   SMIBool? isHandsUp, isChecking;
   SMINumber? numLook;
-
   StateMachineController? stateMachineController;
+  bool _responseLoading = false;
+  String? password = '';
+  String? pasportNumber = '';
+
+  _login(String username, String password) async {
+    var url = Uri.parse("${AppConstants.baseUrl}user/login");
+    bool responseStatus = false;
+    String _authToken = "";
+    print("++++++" + "LOGIN FUNCTION" + "+++++++");
+    // Navigator.pushNamed(context, AppRouter.home);
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _responseLoading = true;
+    });
+    var bodyString = {"password": password, "passport_number": pasportNumber};
+
+    var body = jsonEncode(bodyString);
+
+    var response = await http.post(url,
+        headers: {
+          "Content-Type": "Application/json",
+        },
+        body: body);
+    print("++++++" + response.body.toString() + "+++++++");
+    if (response.statusCode == 200) {
+      final item = json.decode(response.body);
+      UserLogin user = UserLogin.fromJson(item);
+      _authToken = user.token!;
+      prefs.setString("authToken", _authToken);
+      prefs.setString("username", user.firstName + " " + user.lastName);
+      prefs.setString("firstName", user.firstName);
+      prefs.setString("lastName", user.lastName);
+      prefs.setString("email", user.email);
+      prefs.setString("passportNumber", user.passportNumber);
+      prefs.setString("phone", user.passportNumber);
+      prefs.setString("password", password);
+      prefs.setString(
+          "nationalIdentificationNumber", user.nationalIdentificationNumber);
+      prefs.setString("userid", user.userId.toString());
+      // prefs.setString("dateJoined", user.datecreated.toIso8601String());
+      prefs.setBool("isAdmin", user.isAdmin);
+      prefs.setBool("isclerk", user.isClerk);
+      prefs.setString("country", user.country);
+      prefs.setBool("issuperadmin", user.isSuperAdmin);
+      setState(() {
+        _responseLoading = false;
+      });
+      pushAndRemoveUntil(const HomePage());
+    } else if (response.statusCode == 409) {
+      setState(() {
+        _responseLoading = false;
+      });
+      showSnackBar("User account not activated.");
+    } else {
+      setState(() {
+        _responseLoading = false;
+      });
+      showSnackBar("Authentication Failure: Invalid credentials.");
+    }
+  }
+
+  checkfilled() {
+    if (pasportNumber!.isNotEmpty && password!.isNotEmpty) {
+      _login(pasportNumber!, password!);
+    } else {
+      print(pasportNumber);
+      print(password);
+      showSnackBar("Fill both password and passport number");
+    }
+  }
 
   @override
   void initState() {
@@ -37,12 +114,12 @@ class _SignInPageState extends State<SignInPage> {
         if (stateMachineController != null) {
           artboard.addController(stateMachineController!);
 
-          stateMachineController!.inputs.forEach((e) {
+          for (var e in stateMachineController!.inputs) {
             debugPrint(e.runtimeType.toString());
             debugPrint("name${e.name}End");
-          });
+          }
 
-          stateMachineController!.inputs.forEach((element) {
+          for (var element in stateMachineController!.inputs) {
             if (element.name == "trigSuccess") {
               successTrigger = element as SMITrigger;
             } else if (element.name == "trigFail") {
@@ -54,7 +131,7 @@ class _SignInPageState extends State<SignInPage> {
             } else if (element.name == "numLook") {
               numLook = element as SMINumber;
             }
-          });
+          }
         }
 
         setState(() => _teddyArtboard = artboard);
@@ -161,16 +238,16 @@ class _SignInPageState extends State<SignInPage> {
     numLook?.change(val.length.toDouble());
   }
 
-  void login() {
-    isChecking?.change(false);
-    isHandsUp?.change(false);
-    if (passportNumberController.text == "admin" &&
-        passwordController.text == "admin") {
-      successTrigger?.fire();
-    } else {
-      failTrigger?.fire();
-    }
-  }
+  // void login() {
+  //   isChecking?.change(false);
+  //   isHandsUp?.change(false);
+  //   if (passportNumberController.text == "admin" &&
+  //       passwordController.text == "admin") {
+  //     successTrigger?.fire();
+  //   } else {
+  //     failTrigger?.fire();
+  //   }
+  // }
 
   void toSignUpPage() {
     Navigator.push(
@@ -184,7 +261,7 @@ class _SignInPageState extends State<SignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xffd6e2ea),
+      backgroundColor: const Color(0xffd6e2ea),
       resizeToAvoidBottomInset: true,
       body: SingleChildScrollView(
         child: Container(
@@ -214,7 +291,7 @@ class _SignInPageState extends State<SignInPage> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                          color: Color(0xFF432a72),
+                          color: const Color(0xFF432a72),
                           borderRadius: BorderRadius.circular(5)),
                       height: MediaQuery.of(context).size.height / 3.5,
                       child: Column(
@@ -226,6 +303,10 @@ class _SignInPageState extends State<SignInPage> {
                               color: Colors.white,
                             ),
                             child: TextField(
+                              textInputAction: TextInputAction.next,
+                              onSubmitted: (value) {
+                                handsOnTheEyes();
+                              },
                               decoration: InputDecoration(
                                 hintText: 'Passport Number',
                                 border: OutlineInputBorder(
@@ -241,8 +322,10 @@ class _SignInPageState extends State<SignInPage> {
                               obscureText: false,
                               controller: passportNumberController,
                               onChanged: (value) {
-                                print(value);
-                                moveEyeBalls(value);
+                                setState(() {
+                                  moveEyeBalls(value);
+                                  pasportNumber = value;
+                                });
                               },
                             ),
                           ),
@@ -252,6 +335,10 @@ class _SignInPageState extends State<SignInPage> {
                               color: Colors.white,
                             ),
                             child: TextField(
+                              textInputAction: TextInputAction.send,
+                              onSubmitted: (value) {
+                                checkfilled();
+                              },
                               decoration: InputDecoration(
                                 hintText: 'Password',
                                 border: OutlineInputBorder(
@@ -267,7 +354,9 @@ class _SignInPageState extends State<SignInPage> {
                               obscureText: true,
                               controller: passwordController,
                               onChanged: (value) {
-                                print(value);
+                                setState(() {
+                                  password = value;
+                                });
                               },
                             ),
                           ),
@@ -280,12 +369,16 @@ class _SignInPageState extends State<SignInPage> {
                                 },
                                 child: const Text(
                                   'Create new account',
-                                  style: TextStyle(color: Colors.white),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontStyle: FontStyle.italic,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                               ElevatedButton(
                                 onPressed: () {
-                                  login();
+                                  checkfilled();
                                 },
                                 style: ButtonStyle(
                                   minimumSize:
@@ -298,7 +391,13 @@ class _SignInPageState extends State<SignInPage> {
                                     ),
                                   ),
                                 ),
-                                child: const Text('Sign in'),
+                                child: const Text(
+                                  'Sign in',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
                             ],
                           ),

@@ -35,6 +35,11 @@ dependencies:
   auto_size_text: 
   rive: ^0.9.1
   country_picker:
+  intl_phone_number_input:
+  http:
+  http_proxy_override:
+  intl:
+  google_fonts: 
 
 
   # The following adds the Cupertino Icons font to your application.

@@ -1,9 +1,19 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:http_proxy_override/http_proxy_override.dart';
 import 'views/auth/route.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  httpOverrides();
   runApp(const CassoaTraveller());
+}
+
+httpOverrides() async {
+  HttpProxyOverride httpProxyOverride =
+      await HttpProxyOverride.createHttpProxy();
+  HttpOverrides.global = httpProxyOverride;
 }
 
 class CassoaTraveller extends StatelessWidget {
@@ -20,4 +30,3 @@ class CassoaTraveller extends StatelessWidget {
     );
   }
 }
-

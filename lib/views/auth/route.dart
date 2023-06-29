@@ -19,8 +19,8 @@ class _CheckIfSignedInState extends State<CheckIfSignedIn> {
   checkIfSignedIn() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      userId = prefs.getString('userId') ?? '';
-      token = prefs.getString('token') ?? '';
+      userId = prefs.getString('userid') ?? '';
+      token = prefs.getString('authToken') ?? '';
       isFirstTime = prefs.getBool('isFirstTime') ?? true;
     });
     if (userId!.isNotEmpty && token!.isNotEmpty) {

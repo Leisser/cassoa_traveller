@@ -12,8 +12,11 @@ class Title1 extends StatelessWidget {
       'Civil Aviation Safety and Security Oversight Agency'.toUpperCase(),
       maxLines: 2,
       textAlign: TextAlign.center,
-      style: TextStyle(color: color!, fontWeight: FontWeight.w600,fontSize: 40,),
-      
+      style: TextStyle(
+        color: color!,
+        fontWeight: FontWeight.bold,
+        fontSize: 40,
+      ),
     );
   }
 }
